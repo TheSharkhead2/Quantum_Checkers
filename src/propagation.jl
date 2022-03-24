@@ -93,4 +93,30 @@ function probabilities_propagation(x::Int, y::Int, k::Int, N::Float64)
 
 end # function probabilities_propagation
 
+"""
+Measures position of qubit based on current state and collapses the qubit's 
+position state
 
+"""
+function locate!(q::Qubit)
+    # get probabilities of being at each location 
+    probabilities = probabilities(q.S)
+
+    locations = [(k, j) for j ∈ 1:5 for k ∈ 1:5] # get all possible locations as tuples in order that julia collapses matrix 
+
+    # convert probability matrix to vector 
+    probabilities = vec(probabilities)
+
+    location = sample(locations, Weights(probabilities)) # sample location based on probabilities
+
+    q.x = location[1] - 3 # update qubit's x position
+    q.y = location[2] - 3 # update qubit's y position
+
+    qubitState = Complex.(zeros(5,5)) # empty state 
+    qubitState[location[1], location[2]] = 1.0 # set new state to be 1 at new location (collapse qubit state to just this location) 
+
+    q.S = qubitState # update qubit's state 
+
+    q
+
+end # function locate!
