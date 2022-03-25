@@ -100,12 +100,12 @@ position state
 """
 function locate!(q::Qubit)
     # get probabilities of being at each location 
-    qubitProbabilities = probabilities(q.S)
+    qubitProbabilitiesMatrix = probabilities(q.S)
 
     locations = [(k, j) for j ∈ 1:5 for k ∈ 1:5] # get all possible locations as tuples in order that julia collapses matrix 
 
     # convert probability matrix to vector 
-    qubitProbabilities = vec(qubitProbabilities)
+    qubitProbabilities = vec(qubitProbabilitiesMatrix)
 
     location = sample(locations, Weights(qubitProbabilities)) # sample location based on probabilities
 
@@ -116,6 +116,8 @@ function locate!(q::Qubit)
     qubitState[location[1], location[2]] = 1.0 # set new state to be 1 at new location (collapse qubit state to just this location) 
 
     q.S = qubitState # update qubit's state 
+
+    q.P = qubitProbabilitiesMatrix # update qubit's probability matrix
 
     q
 

@@ -6,6 +6,7 @@ mutable struct Qubit
     x::Int # represents last measured x position, x ∈ {-2, -1, 0, 1, 2}
     y::Int # represents last measured y position, y ∈ {-2, -1, 0, 1, 2}
     S::Matrix{ComplexF64} # represents state of qubit
+    P::Matrix{Float64} # represents probability of being at each location for the last measurement (purely for display purposes)
 end # struct Qubit
 
 """

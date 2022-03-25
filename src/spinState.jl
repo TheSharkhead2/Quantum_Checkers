@@ -23,6 +23,21 @@ const I2 = [
     0 1;
 ]
 
+const PauliX = [
+    0 1;
+    1 0;
+]
+
+const PauliY = [
+    0 -1*im;
+    1*im 0;
+]
+
+const PauliZ = [
+    1 0;
+    0 -1;
+]
+
 """
 Takes in a state immedietly after a position measurement and updates the spin 
 state accordingly
@@ -59,3 +74,4 @@ function update_spin!(gameBoard::Checkers)
     end # if
 
 end # function update_spin!
+

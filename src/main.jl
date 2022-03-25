@@ -11,8 +11,8 @@ BACKGROUND = colorant"black"
 initialQubitState = Complex.(zeros(5,5)) # empty state matrix 
 initialQubitState[3, 3] = 1.0 # set initial state to have absolute position at 0,0 
 
-qubit1 = Qubit(0, 0, copy(initialQubitState)) # create qubit 1 
-qubit2 = Qubit(0, 0, copy(initialQubitState)) # create qubit 2
+qubit1 = Qubit(0, 0, copy(initialQubitState), Float64.(copy(initialQubitState))) # create qubit 1 
+qubit2 = Qubit(0, 0, copy(initialQubitState), Float64.(copy(initialQubitState))) # create qubit 2
 
 # define initial spin state of two qubits
 initialSpinState = Complex.([
@@ -23,6 +23,8 @@ initialSpinState = Complex.([
 ])
 
 const N = 10000.0 # factor as affecting time increments
+
+propagated = false # flag to indicate whether or not qubits have been propagated (to prevent NaN probabilities and maintain even propagation time) 
 
 gameBoard = Checkers(initialSpinState, qubit1, qubit2) # create game board with qubits
 
@@ -41,35 +43,72 @@ spinState3.pos = (1160, 240)
 spinState4 = TextActor("you don't see this", "ariali"; font_size=20, color=Int[255, 255, 255, 255])
 spinState4.pos = (1160, 320)
 
+# generate all probability text for qubit 1 
+probabilitiesQubit1 = reshape([TextActor(" ", "ariali"; font_size=15, color=Int[255, 0, 0, 255]) for _ ∈ 1:25], (5,5)) # create 5x5 array of placeholder text elements
+
+# set all positions for qubit 1 probabilities
+for (indices, probabilityActor) ∈ pairs(probabilitiesQubit1)
+    probabilityActor.pos = (52 + (indices[1]-1) * 150, 52 + (indices[2] - 1) * 150)
+end # for 
+
+# generate all probability text for qubit 2 
+probabilitiesQubit2 = reshape([TextActor(" ", "ariali"; font_size=15, color=Int[0, 0, 255, 255]) for _ ∈ 1:25], (5,5)) # create 5x5 array of placeholder text elements
+
+# set all positions for qubit 2 probabilities 
+for (indices, probabilityActor) ∈ pairs(probabilitiesQubit2)
+    probabilityActor.pos = (52 + (indices[1]-1) * 150, 180 + (indices[2] - 1) * 150)
+end # for
 
 function on_key_down(g::Game, key)
+    global spinState1, spinState2, spinState3, spinState4
+    global propagated
+    global probabilitiesQubit1, probabilitiesQubit2
     if key == Keys.SPACE
         locate!(gameBoard.q1) # measure qubit 1
         locate!(gameBoard.q2) # measure qubit 2
 
         update_spin!(gameBoard) # update spin state
+
+        propagated = false # reset propagated flag
+
+        # update spin state text 
+        spinState1 = TextActor("$(round(real(gameBoard.spinState[1]); sigdigits=4)) + $(round(imag(gameBoard.spinState[1]); sigdigits=4))i", "ariali"; font_size=20, color=Int[255, 255, 255 ,255])
+        spinState1.pos = (1160, 80)
+        spinState2 = TextActor("$(round(real(gameBoard.spinState[2]); sigdigits=4)) + $(round(imag(gameBoard.spinState[2]); sigdigits=4))i", "ariali"; font_size=20, color=Int[255, 255, 255 ,255])
+        spinState2.pos = (1160, 160)
+        spinState3 = TextActor("$(round(real(gameBoard.spinState[3]); sigdigits=4)) + $(round(imag(gameBoard.spinState[3]); sigdigits=4))i", "ariali"; font_size=20, color=Int[255, 255, 255 ,255])
+        spinState3.pos = (1160, 240)
+        spinState4 = TextActor("$(round(real(gameBoard.spinState[4]); sigdigits=4)) + $(round(imag(gameBoard.spinState[4]); sigdigits=4))i", "ariali"; font_size=20, color=Int[255, 255, 255 ,255])
+        spinState4.pos = (1160, 320)
+
+        # update probabilities text for qubit 1
+        for (indices, probability) ∈ pairs(gameBoard.q1.P)
+            probabilitiesQubit1[indices[1], indices[2]] = TextActor("$(round(probability; sigdigits=4))", "ariali"; font_size=15, color=Int[255, 0, 0, 255])
+            probabilitiesQubit1[indices[1], indices[2]].pos = (52 + (indices[1]-1) * 150, 52 + (indices[2] - 1) * 150)
+        end # for
+
+        # update probabilities text for qubit 2
+        for (indices, probability) ∈ pairs(gameBoard.q2.P)
+            probabilitiesQubit2[indices[1], indices[2]] = TextActor("$(round(probability; sigdigits=4))", "ariali"; font_size=15, color=Int[50, 50, 255, 255])
+            probabilitiesQubit2[indices[1], indices[2]].pos = (52 + (indices[1]-1) * 150, 180 + (indices[2] - 1) * 150)
+        end # for
+
     end # if 
 end # function on_key_down
 
 function update()
-    global spinState1, spinState2, spinState3, spinState4
+    global propagated
     # propagate qubit states
-    gameBoard.q1.S = propagate(2, N, gameBoard.q1.S)
-    gameBoard.q2.S = propagate(2, N, gameBoard.q2.S)
+    if !propagated
+        timePassing = rand(2:2:20) # random even time between 2 and 20
+        println("propagating qubits with ", timePassing, " time increments")
+        gameBoard.q1.S = propagate(timePassing, N, gameBoard.q1.S)
+        gameBoard.q2.S = propagate(timePassing, N, gameBoard.q2.S)
+        propagated = true 
+    end # if 
 
     # println(gameBoard.q1.S)
     # println(gameBoard.q2.S)
-
-    # update spin state text 
-    spinState1 = TextActor("$(round(real(gameBoard.spinState[1]); sigdigits=4)) + $(round(imag(gameBoard.spinState[1]); sigdigits=4))i", "ariali"; font_size=20, color=Int[255, 255, 255 ,255])
-    spinState1.pos = (1160, 80)
-    spinState2 = TextActor("$(round(real(gameBoard.spinState[2]); sigdigits=4)) + $(round(imag(gameBoard.spinState[2]); sigdigits=4))i", "ariali"; font_size=20, color=Int[255, 255, 255 ,255])
-    spinState2.pos = (1160, 160)
-    spinState3 = TextActor("$(round(real(gameBoard.spinState[3]); sigdigits=4)) + $(round(imag(gameBoard.spinState[3]); sigdigits=4))i", "ariali"; font_size=20, color=Int[255, 255, 255 ,255])
-    spinState3.pos = (1160, 240)
-    spinState4 = TextActor("$(round(real(gameBoard.spinState[4]); sigdigits=4)) + $(round(imag(gameBoard.spinState[4]); sigdigits=4))i", "ariali"; font_size=20, color=Int[255, 255, 255 ,255])
-    spinState4.pos = (1160, 320)
-
 end # function update 
 
 function draw()
@@ -105,5 +144,15 @@ function draw()
     draw(spinState2)
     draw(spinState3)
     draw(spinState4)
+
+    # draw probabilities for qubit 1
+    for q1Prob ∈ probabilitiesQubit1
+        draw(q1Prob)
+    end # for
+
+    # draw probabilities for qubit 2
+    for q2Prob ∈ probabilitiesQubit2
+        draw(q2Prob)
+    end # for
 
 end # function draw
