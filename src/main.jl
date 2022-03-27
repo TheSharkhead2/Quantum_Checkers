@@ -26,6 +26,8 @@ const N = 10000.0 # factor as affecting time increments
 
 propagated = false # flag to indicate whether or not qubits have been propagated (to prevent NaN probabilities and maintain even propagation time) 
 
+nonUpdatedQubit = 0 # 0 if qubits didn't agree on one coord, 1 if qubit 1 was left alone and they did, 2 if qubit 2 was left alone and they did
+
 gameBoard = Checkers(initialSpinState, qubit1, qubit2) # create game board with qubits
 
 spinStateLabel = TextActor("Spin State = ", "arialbd"; font_size=40, color=Int[255, 255, 255, 255])
@@ -59,15 +61,19 @@ for (indices, probabilityActor) ∈ pairs(probabilitiesQubit2)
     probabilityActor.pos = (52 + (indices[1]-1) * 150, 180 + (indices[2] - 1) * 150)
 end # for
 
+leftAloneQubitText = TextActor("The qubits don't agree on one coordinate", "arial"; font_size=25, color=Int[255, 255, 255, 255])
+leftAloneQubitText.pos = (900, 400)
+
 function on_key_down(g::Game, key)
     global spinState1, spinState2, spinState3, spinState4
     global propagated
     global probabilitiesQubit1, probabilitiesQubit2
+    global leftAloneQubitText, nonUpdatedQubit
     if key == Keys.SPACE
         locate!(gameBoard.q1) # measure qubit 1
         locate!(gameBoard.q2) # measure qubit 2
 
-        update_spin!(gameBoard) # update spin state
+        qubitLeftAlone = update_spin!(gameBoard) # update spin state
 
         propagated = false # reset propagated flag
 
@@ -93,6 +99,20 @@ function on_key_down(g::Game, key)
             probabilitiesQubit2[indices[1], indices[2]].pos = (52 + (indices[1]-1) * 150, 180 + (indices[2] - 1) * 150)
         end # for
 
+        # update left alone qubit text 
+        if qubitLeftAlone == 0 # qubits didn't agree on coordinates 
+            leftAloneQubitText = TextActor("The qubits don't agree on one coordinate", "arial"; font_size=25, color=Int[255, 255, 255, 255])
+            leftAloneQubitText.pos = (900, 400)
+            nonUpdatedQubit = 0
+        elseif qubitLeftAlone == 1 # if qubit 1 was left alone 
+            leftAloneQubitText = TextActor("Qubit 1 was left alone", "arial"; font_size=25, color=Int[255, 255, 255, 255])
+            leftAloneQubitText.pos = (900, 400)
+            nonUpdatedQubit = 1
+        else # otherwise qubit 2 was left alone
+            leftAloneQubitText = TextActor("Qubit 2 was left alone", "arial"; font_size=25, color=Int[255, 255, 255, 255])
+            leftAloneQubitText.pos = (900, 400)
+            nonUpdatedQubit = 2
+        end # if
     end # if 
 end # function on_key_down
 
@@ -154,5 +174,7 @@ function draw()
     for q2Prob ∈ probabilitiesQubit2
         draw(q2Prob)
     end # for
+
+    draw(leftAloneQubitText)
 
 end # function draw

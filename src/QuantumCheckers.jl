@@ -13,7 +13,10 @@ export propagate, probabilities_propagation, locate!
 
 include("spinState.jl")
 
-export update_spin!
+export update_spin!, measure_spin!
 
+include("generalFunctions.jl")
+
+export inner_product
 
 end # module QuantumCheckers
