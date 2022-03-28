@@ -28,6 +28,14 @@ propagated = false # flag to indicate whether or not qubits have been propagated
 
 nonUpdatedQubit = 0 # 0 if qubits didn't agree on one coord, 1 if qubit 1 was left alone and they did, 2 if qubit 2 was left alone and they did
 
+lastPlayerMove = false # last player to move. true for player1, false for player2. initialized to false such that player1 goes first
+
+playerMoved = true # flag to indicate whether or not the player has moved yet (if false, can't propagate qubits further)
+
+# player scores start at 0
+player1Score = 0 
+player2Score = 0
+
 gameBoard = Checkers(initialSpinState, qubit1, qubit2) # create game board with qubits
 
 spinStateLabel = TextActor("Spin State = ", "arialbd"; font_size=40, color=Int[255, 255, 255, 255])
@@ -68,8 +76,12 @@ function on_key_down(g::Game, key)
     global spinState1, spinState2, spinState3, spinState4
     global propagated
     global probabilitiesQubit1, probabilitiesQubit2
-    global leftAloneQubitText, nonUpdatedQubit
-    if key == Keys.SPACE
+    global leftAloneQubitText, nonUpdatedQubit, lastPlayerMove, playerMoved
+    global player1Score
+
+    player1ChooseMove = false # bool to indicate whether or not player 1 has chosen a move
+
+    if key == Keys.SPACE && playerMoved # if player has moved and pressed spacebar
         locate!(gameBoard.q1) # measure qubit 1
         locate!(gameBoard.q2) # measure qubit 2
 
@@ -105,19 +117,70 @@ function on_key_down(g::Game, key)
             leftAloneQubitText.pos = (900, 400)
             nonUpdatedQubit = 0
         elseif qubitLeftAlone == 1 # if qubit 1 was left alone 
-            leftAloneQubitText = TextActor("Qubit 1 was left alone", "arial"; font_size=25, color=Int[255, 255, 255, 255])
-            leftAloneQubitText.pos = (900, 400)
+            if !lastPlayerMove # if player2 moved last
+                leftAloneQubitText = TextActor("Qubit 1 was left alone - Player 1's move", "arial"; font_size=25, color=Int[255, 255, 255, 255])
+                leftAloneQubitText.pos = (900, 400)
+            else  # player1 moved last
+                leftAloneQubitText = TextActor("Qubit 1 was left alone - Player 2's move", "arial"; font_size=25, color=Int[255, 255, 255, 255])
+                leftAloneQubitText.pos = (900, 400)
+            end # if
+            playerMoved = false # player hasn't moved yet
             nonUpdatedQubit = 1
         else # otherwise qubit 2 was left alone
-            leftAloneQubitText = TextActor("Qubit 2 was left alone", "arial"; font_size=25, color=Int[255, 255, 255, 255])
-            leftAloneQubitText.pos = (900, 400)
+            if !lastPlayerMove # if player2 moved last 
+                leftAloneQubitText = TextActor("Qubit 2 was left alone - Player 1's move", "arial"; font_size=25, color=Int[255, 255, 255, 255])
+                leftAloneQubitText.pos = (900, 400)
+            else # player1 moved last 
+                leftAloneQubitText = TextActor("Qubit 2 was left alone - Player 2's move", "arial"; font_size=25, color=Int[255, 255, 255, 255])
+                leftAloneQubitText.pos = (900, 400)
+            end # if
+            playerMoved = false # player hasn't moved yet
             nonUpdatedQubit = 2
         end # if
+    elseif key == Keys.X && !playerMoved # if player1 applies pauliX and can move 
+        player1Move = "x"
+        player1ChooseMove = true
+    elseif key == Keys.Y && !playerMoved # if player1 applies pauliY and can move 
+        player1Move = "y"
+        player1ChooseMove = true
+    elseif key == Keys.Z && !playerMoved # if player1 applies pauliZ and can move
+        player1Move = "z"
+        player1ChooseMove = true
+    elseif key == Keys.I && !playerMoved # if player1 applies identity and can move (does nothing)
+        player1Move = "I"
+        player1ChooseMove = true
     end # if 
+
+    if player1ChooseMove && player1Move == "I" # if player1 does nothing 
+        playerMoved = true 
+        lastPlayerMove = true # player1 moved last
+        player1ChooseMove = false
+    elseif player1ChooseMove # otherwise, measure spin accordingly
+        measuredSpin = measure_spin!(gameBoard, player1Move, nonUpdatedQubit) # measure spin and collapse state vector 
+
+        player1Score += measuredSpin
+
+        playerMoved = true 
+        lastPlayerMove = true # player1 moved last
+        player1ChooseMove = false
+
+        # update spin state text 
+        spinState1 = TextActor("$(round(real(gameBoard.spinState[1]); sigdigits=4)) + $(round(imag(gameBoard.spinState[1]); sigdigits=4))i", "ariali"; font_size=20, color=Int[255, 255, 255 ,255])
+        spinState1.pos = (1160, 80)
+        spinState2 = TextActor("$(round(real(gameBoard.spinState[2]); sigdigits=4)) + $(round(imag(gameBoard.spinState[2]); sigdigits=4))i", "ariali"; font_size=20, color=Int[255, 255, 255 ,255])
+        spinState2.pos = (1160, 160)
+        spinState3 = TextActor("$(round(real(gameBoard.spinState[3]); sigdigits=4)) + $(round(imag(gameBoard.spinState[3]); sigdigits=4))i", "ariali"; font_size=20, color=Int[255, 255, 255 ,255])
+        spinState3.pos = (1160, 240)
+        spinState4 = TextActor("$(round(real(gameBoard.spinState[4]); sigdigits=4)) + $(round(imag(gameBoard.spinState[4]); sigdigits=4))i", "ariali"; font_size=20, color=Int[255, 255, 255 ,255])
+        spinState4.pos = (1160, 320)
+
+    end # if
+
 end # function on_key_down
 
 function update()
     global propagated
+    global lastPlayerMove, playerMoved, player2Score
     # propagate qubit states
     if !propagated
         timePassing = rand(2:2:20) # random even time between 2 and 20
@@ -125,6 +188,32 @@ function update()
         gameBoard.q1.S = propagate(timePassing, N, gameBoard.q1.S)
         gameBoard.q2.S = propagate(timePassing, N, gameBoard.q2.S)
         propagated = true 
+    end # if 
+
+    # do player2 computer move
+    if lastPlayerMove && !playerMoved # if player1 moved last and player2 hasn't moved yet 
+        player2Move = computer_move(gameBoard, nonUpdatedQubit) # get player 2 move from computer logic 
+
+        if player2Move == "I" # if player decided to do nothing 
+        else # otherwise, measure spin accordingly
+            measuredSpin = measure_spin!(gameBoard, player2Move, nonUpdatedQubit) # measure spin and update spin to eigenvector
+
+            player2Score += measuredSpin # player2 score updated
+        end # if
+
+        playerMoved = true # player2 has moved
+        lastPlayerMove = false # player2 has moved last
+
+        # update spin state text 
+        spinState1 = TextActor("$(round(real(gameBoard.spinState[1]); sigdigits=4)) + $(round(imag(gameBoard.spinState[1]); sigdigits=4))i", "ariali"; font_size=20, color=Int[255, 255, 255 ,255])
+        spinState1.pos = (1160, 80)
+        spinState2 = TextActor("$(round(real(gameBoard.spinState[2]); sigdigits=4)) + $(round(imag(gameBoard.spinState[2]); sigdigits=4))i", "ariali"; font_size=20, color=Int[255, 255, 255 ,255])
+        spinState2.pos = (1160, 160)
+        spinState3 = TextActor("$(round(real(gameBoard.spinState[3]); sigdigits=4)) + $(round(imag(gameBoard.spinState[3]); sigdigits=4))i", "ariali"; font_size=20, color=Int[255, 255, 255 ,255])
+        spinState3.pos = (1160, 240)
+        spinState4 = TextActor("$(round(real(gameBoard.spinState[4]); sigdigits=4)) + $(round(imag(gameBoard.spinState[4]); sigdigits=4))i", "ariali"; font_size=20, color=Int[255, 255, 255 ,255])
+        spinState4.pos = (1160, 320)
+
     end # if 
 
     # println(gameBoard.q1.S)

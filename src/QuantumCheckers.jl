@@ -17,6 +17,6 @@ export update_spin!, measure_spin!
 
 include("generalFunctions.jl")
 
-export inner_product
+export inner_product, computer_move
 
 end # module QuantumCheckers

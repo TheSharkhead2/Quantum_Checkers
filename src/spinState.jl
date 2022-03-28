@@ -133,6 +133,6 @@ function measure_spin!(gameBoard::Checkers, pauliMatrix::String, qubit::Int)
 
     gameBoard.spinState = eigenvectors[1:4, measuredSpin] # change spin state to eigenvector corresponding to measured spin
 
-    eigenvalues(measuredSpin) # return -1 or +1 (the measured spin)
+    eigenvalues[measuredSpin] # return -1 or +1 (the measured spin)
 
 end # function measure_spin!
