@@ -32,6 +32,8 @@ lastPlayerMove = false # last player to move. true for player1, false for player
 
 playerMoved = true # flag to indicate whether or not the player has moved yet (if false, can't propagate qubits further)
 
+scoreUpdateRequired = false # flag to indicate whether or not the score needs to be updated (save memory from text actor multiplication)
+
 # player scores start at 0
 player1Score = 0 
 player2Score = 0
@@ -72,12 +74,21 @@ end # for
 leftAloneQubitText = TextActor("The qubits don't agree on one coordinate", "arial"; font_size=25, color=Int[255, 255, 255, 255])
 leftAloneQubitText.pos = (900, 400)
 
+player1ScoreText = TextActor("Player 1 Score: 0", "arial"; font_size=25, color=Int[255, 255, 255, 255])
+player1ScoreText.pos = (900, 500)
+
+player2ScoreText = TextActor("Player 2 Score: 0", "arial"; font_size=25, color=Int[255, 255, 255, 255])
+player2ScoreText.pos = (900, 540)
+
+lastMoveText = TextActor("Last move: n/a", "arial"; font_size=25, color=Int[255, 255, 255, 255])
+lastMoveText.pos = (900, 600)
+
 function on_key_down(g::Game, key)
     global spinState1, spinState2, spinState3, spinState4
     global propagated
     global probabilitiesQubit1, probabilitiesQubit2
     global leftAloneQubitText, nonUpdatedQubit, lastPlayerMove, playerMoved
-    global player1Score
+    global player1Score, scoreUpdateRequired, lastMoveText
 
     player1ChooseMove = false # bool to indicate whether or not player 1 has chosen a move
 
@@ -155,6 +166,10 @@ function on_key_down(g::Game, key)
         playerMoved = true 
         lastPlayerMove = true # player1 moved last
         player1ChooseMove = false
+
+        lastMoveText = TextActor("Last move: Player 1 did nothing", "arial"; font_size=25, color=Int[255, 255, 255, 255])
+        lastMoveText.pos = (900, 600)
+
     elseif player1ChooseMove # otherwise, measure spin accordingly
         measuredSpin = measure_spin!(gameBoard, player1Move, nonUpdatedQubit) # measure spin and collapse state vector 
 
@@ -174,6 +189,11 @@ function on_key_down(g::Game, key)
         spinState4 = TextActor("$(round(real(gameBoard.spinState[4]); sigdigits=4)) + $(round(imag(gameBoard.spinState[4]); sigdigits=4))i", "ariali"; font_size=20, color=Int[255, 255, 255 ,255])
         spinState4.pos = (1160, 320)
 
+        scoreUpdateRequired = true # new score, needs to be updated on screen
+
+        lastMoveText = TextActor("Last move: Player 1 applied Pauli $(player1Move) to qubit $(nonUpdatedQubit)", "arial"; font_size=25, color=Int[255, 255, 255, 255])
+        lastMoveText.pos = (900, 600)
+
     end # if
 
 end # function on_key_down
@@ -181,6 +201,7 @@ end # function on_key_down
 function update()
     global propagated
     global lastPlayerMove, playerMoved, player2Score
+    global player1ScoreText, player2ScoreText, scoreUpdateRequired, lastMoveText
     # propagate qubit states
     if !propagated
         timePassing = rand(2:2:20) # random even time between 2 and 20
@@ -195,10 +216,15 @@ function update()
         player2Move = computer_move(gameBoard, nonUpdatedQubit) # get player 2 move from computer logic 
 
         if player2Move == "I" # if player decided to do nothing 
+            lastMoveText = TextActor("Last move: Player 2 did nothing", "arial"; font_size=25, color=Int[255, 255, 255, 255])
+            lastMoveText.pos = (900, 600)
         else # otherwise, measure spin accordingly
             measuredSpin = measure_spin!(gameBoard, player2Move, nonUpdatedQubit) # measure spin and update spin to eigenvector
 
             player2Score += measuredSpin # player2 score updated
+        
+            lastMoveText = TextActor("Last move: Player 2 applied Pauli $(player2Move) to qubit $(nonUpdatedQubit)", "arial"; font_size=25, color=Int[255, 255, 255, 255])
+            lastMoveText.pos = (900, 600)
         end # if
 
         playerMoved = true # player2 has moved
@@ -214,7 +240,19 @@ function update()
         spinState4 = TextActor("$(round(real(gameBoard.spinState[4]); sigdigits=4)) + $(round(imag(gameBoard.spinState[4]); sigdigits=4))i", "ariali"; font_size=20, color=Int[255, 255, 255 ,255])
         spinState4.pos = (1160, 320)
 
+        scoreUpdateRequired = true # new score, needs to be updated on screen
+
     end # if 
+
+    if scoreUpdateRequired
+        player1ScoreText = TextActor("Player 1 Score: $(player1Score)", "arial"; font_size=25, color=Int[255, 255, 255, 255])
+        player1ScoreText.pos = (900, 500)
+
+        player2ScoreText = TextActor("Player 2 Score: $(player2Score)", "arial"; font_size=25, color=Int[255, 255, 255, 255])
+        player2ScoreText.pos = (900, 540)
+
+        scoreUpdateRequired = false # score updated, no need to update again
+    end # if
 
     # println(gameBoard.q1.S)
     # println(gameBoard.q2.S)
@@ -265,5 +303,10 @@ function draw()
     end # for
 
     draw(leftAloneQubitText)
+
+    draw(player1ScoreText)
+    draw(player2ScoreText)
+
+    draw(lastMoveText)
 
 end # function draw
