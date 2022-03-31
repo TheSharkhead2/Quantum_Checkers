@@ -43,16 +43,25 @@ gameBoard = Checkers(initialSpinState, qubit1, qubit2) # create game board with 
 spinStateLabel = TextActor("Spin State = ", "arialbd"; font_size=40, color=Int[255, 255, 255, 255])
 spinStateLabel.pos = (900, 200)
 
-spinState1 = TextActor("you don't see this", "ariali"; font_size=20, color=Int[255, 255, 255, 255])
+# spinState1 = TextActor("you don't see this", "ariali"; font_size=20, color=Int[255, 255, 255, 255])
+# spinState1.pos = (1160, 80)
+
+# spinState2 = TextActor("you don't see this", "ariali"; font_size=20, color=Int[255, 255, 255, 255])
+# spinState2.pos = (1160, 160)
+
+# spinState3 = TextActor("you don't see this", "ariali"; font_size=20, color=Int[255, 255, 255, 255])
+# spinState3.pos = (1160, 240)
+
+# spinState4 = TextActor("you don't see this", "ariali"; font_size=20, color=Int[255, 255, 255, 255])
+# spinState4.pos = (1160, 320)
+
+spinState1 = TextActor("$(round(real(gameBoard.spinState[1]); sigdigits=4)) + $(round(imag(gameBoard.spinState[1]); sigdigits=4))i", "ariali"; font_size=20, color=Int[255, 255, 255 ,255])
 spinState1.pos = (1160, 80)
-
-spinState2 = TextActor("you don't see this", "ariali"; font_size=20, color=Int[255, 255, 255, 255])
+spinState2 = TextActor("$(round(real(gameBoard.spinState[2]); sigdigits=4)) + $(round(imag(gameBoard.spinState[2]); sigdigits=4))i", "ariali"; font_size=20, color=Int[255, 255, 255 ,255])
 spinState2.pos = (1160, 160)
-
-spinState3 = TextActor("you don't see this", "ariali"; font_size=20, color=Int[255, 255, 255, 255])
+spinState3 = TextActor("$(round(real(gameBoard.spinState[3]); sigdigits=4)) + $(round(imag(gameBoard.spinState[3]); sigdigits=4))i", "ariali"; font_size=20, color=Int[255, 255, 255 ,255])
 spinState3.pos = (1160, 240)
-
-spinState4 = TextActor("you don't see this", "ariali"; font_size=20, color=Int[255, 255, 255, 255])
+spinState4 = TextActor("$(round(real(gameBoard.spinState[4]); sigdigits=4)) + $(round(imag(gameBoard.spinState[4]); sigdigits=4))i", "ariali"; font_size=20, color=Int[255, 255, 255 ,255])
 spinState4.pos = (1160, 320)
 
 # generate all probability text for qubit 1 
