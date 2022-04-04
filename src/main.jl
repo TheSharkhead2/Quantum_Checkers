@@ -4,8 +4,8 @@ using .Main.QuantumCheckers
 
 using Colors
 
-HEIGHT = 1200 
-WIDTH = 1800
+HEIGHT = 1150 
+WIDTH = 2000
 BACKGROUND = colorant"black"
 
 initialQubitState = Complex.(zeros(5,5)) # empty state matrix 
